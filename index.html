@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WHITE444YT PC Hardware Store</title>
+  <meta name="description" content="3D animated PC hardware store demo with add-to-cart and checkout simulation."/>
+  <style>
+    /* ===== Base ===== */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
+    :root{
+      --bg-1:#060913;
+      --bg-2:#081226;
+      --accent1:#00bfff; /* light blue */
+      --accent2:#0077ff; /* deep blue */
+      --muted:rgba(255,255,255,0.78);
+      --glass: rgba(255,255,255,0.03);
+      --glass-2: rgba(255,255,255,0.02);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:'Poppins',system-ui,Segoe UI,Roboto,Arial;
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(0,191,255,0.03), transparent 10%),
+        radial-gradient(1000px 500px at 90% 90%, rgba(0,119,255,0.02), transparent 8%),
+        linear-gradient(180deg,var(--bg-1),var(--bg-2));
+      color:#e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow-x:hidden;
+    }
+
+    /* ===== Canvas (particles) behind everything ===== */
+    #particles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ===== Header ===== */
+    header{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      z-index:1400;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 6%;
+      gap:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      backdrop-filter: blur(6px) saturate(1.2);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+    }
+    .logo{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo .mark{
+      width:44px;height:44px;border-radius:8px;
+      background: linear-gradient(135deg,var(--accent2),var(--accent1));
+      box-shadow: 0 6px 22px rgba(0,0,0,0.6), 0 0 18px rgba(0,191,255,0.08);
+      display:flex;align-items:center;justify-content:center;font-weight:800;color:#061017;
+      transform:translateZ(0);
+    }
+    .logo .text{font-weight:700; font-size:1.05rem; letter-spacing:0.4px; color:#fff}
+
+    nav ul{list-style:none;display:flex;gap:18px;margin:0;padding:0;align-items:center}
+    nav a{
+      color:var(--muted); text-decoration:none; font-weight:600; font-size:0.95rem;
+      position:relative; padding:6px 8px; border-radius:6px;
+    }
+    nav a:hover{ color:#fff; }
+    nav a.active{ color: #fff; box-shadow:0 6px 20px rgba(0,119,255,0.06) }
+
+    /* ===== Hero ===== */
+    .hero{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:120px 6% 80px;
+      position:relative;
+      z-index:1;
+      overflow:visible;
+      perspective:1200px;
+    }
+    .hero-inner{
+      width:100%;
+      max-width:1200px;
+      display:grid;
+      grid-template-columns: 1fr 460px;
+      gap:36px;
+      align-items:center;
+      transform-style:preserve-3d;
+    }
+    .intro{
+      transform:translateZ(40px);
+    }
+    .intro h1{
+      font-size:clamp(2rem,4.2vw,3.4rem);
+      line-height:1.02;
+      margin:0 0 12px;
+      text-shadow:
+        0 6px 40px rgba(0,0,0,0.6),
+        0 0 18px rgba(0,119,255,0.06);
+    }
+    .intro p{
+      color:rgba(230,238,248,0.85);
+      margin-bottom:18px;
+      font-size:1.02rem;
+    }
+    .controls{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    /* buttons updated to cool blue */
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 18px;
+      border-radius:10px;
+      background:linear-gradient(90deg,var(--accent1),var(--accent2));
+      color:#071427;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow:0 10px 30px rgba(0,119,255,0.12);
+      transform:translateZ(20px);
+      transition: transform .28s cubic-bezier(.2,.9,.3,1), box-shadow .28s;
+    }
+    .btn:hover{ transform:translateY(-6px) translateZ(20px) scale(1.02); box-shadow:0 18px 60px rgba(0,119,255,0.18) }
+
+    .secondary{
+      padding:8px 14px;
+      border-radius:10px;
+      background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,0.02);
+      font-weight:600;
+    }
+
+    /* 3D device / mockup on right */
+    .mockup{
+      position:relative;
+      transform-style:preserve-3d;
+      min-height:300px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .mockup .card{
+      width:100%;
+      max-width:420px;
+      height:320px;
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow: 0 30px 80px rgba(0,0,0,0.65), 0 0 40px rgba(0,119,255,0.03);
+      overflow:hidden;
+      transform-style:preserve-3d;
+      transition: transform .35s cubic-bezier(.2,.9,.3,1);
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+    .mockup .inner{
+      padding:20px;
+      display:flex;
+      gap:12px;
+      height:100%;
+      align-items:center;
+    }
+    .mockup .art{
+      flex:1;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .mockup img{ width:220px; height:160px; object-fit:cover; border-radius:8px; transform:translateZ(40px); box-shadow: 0 10px 30px rgba(0,0,0,0.6) }
+
+    /* ===== Sections ===== */
+    main{position:relative;z-index:2}
+    section{
+      padding:72px 6%;
+      position:relative;
+    }
+    .container{ max-width:1200px; margin:0 auto; }
+
+    h2{
+      font-size:1.6rem;margin:0 0 28px;color:#fff; letter-spacing:0.2px;
+      text-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    /* ===== Product Grid ===== */
+    .product-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit,minmax(240px,1fr));
+      gap:22px;
+      align-items:stretch;
+    }
+    .product{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:14px;
+      padding:16px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.6);
+      transform-style:preserve-3d;
+      transition: transform 400ms cubic-bezier(.2,.9,.3,1), box-shadow 400ms;
+      border:1px solid rgba(255,255,255,0.02);
+      position:relative;
+      overflow:hidden;
+    }
+    .product:hover{ transform: translateY(-12px) rotateX(6deg) rotateY(-8deg) scale(1.02); box-shadow:0 28px 80px rgba(0,0,0,0.68) }
+    .product .thumb{
+      height:160px;border-radius:10px;overflow:hidden;margin-bottom:10px;
+      display:flex;align-items:center;justify-content:center;background:var(--glass-2);
+      transition:transform .45s;
+    }
+    .product img{ width:100%; height:100%; object-fit:cover; transform:translateZ(40px); }
+    .product h3{ margin:6px 0 4px; color:var(--accent1); font-size:1.05rem }
+    .product p.price{ font-weight:800; margin:0 0 8px; color:#fff }
+    .product .meta{ display:flex;justify-content:space-between; align-items:center; gap:12px; margin-top:8px }
+    .small-btn{
+      background:linear-gradient(90deg,var(--accent2),var(--accent1)); color:#071427; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer;
+      border:none; box-shadow:0 8px 24px rgba(0,0,0,0.6);
+    }
+    .small-btn.ghost{
+      background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03);
+    }
+
+    /* ===== Floating cart button ===== */
+    .cart-fab{
+      position:fixed;
+      right:28px;
+      bottom:28px;
+      z-index:1500;
+      width:64px;height:64px;border-radius:16px;
+      display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,var(--accent2),var(--accent1));
+      box-shadow:0 20px 60px rgba(0,0,0,0.6), 0 8px 30px rgba(0,119,255,0.12);
+      cursor:pointer;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .cart-fab .count{
+      position:absolute; top:-8px; right:-8px; background:#061017; color:#fff; padding:4px 8px; border-radius:999px; font-size:0.8rem; font-weight:800;
+      box-shadow:0 6px 18px rgba(0,0,0,0.6);
+    }
+
+    /* ===== Cart drawer ===== */
+    .cart-drawer{
+      position:fixed; right:0; top:0; height:100vh; width:380px; max-width:95vw;
+      background: linear-gradient(180deg, rgba(6,10,17,0.98), rgba(10,14,20,0.98));
+      transform: translateX(110%);
+      transition: transform 360ms cubic-bezier(.2,.9,.3,1);
+      z-index:1600; padding:22px; box-shadow: -30px 0 80px rgba(0,0,0,0.7);
+      display:flex; flex-direction:column;
+    }
+    .cart-drawer.open{ transform:translateX(0) }
+    .cart-drawer h3{ margin:0 0 12px; color:#fff; font-size:1.25rem }
+    .cart-list{ overflow:auto; flex:1; padding-right:6px; margin-bottom:12px; }
+    .cart-item{ display:flex; gap:10px; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px dashed rgba(255,255,255,0.03) }
+    .cart-item img{ width:64px;height:48px;border-radius:6px; object-fit:cover }
+    .cart-item .title{ font-weight:700; color:#fff; font-size:0.95rem }
+    .cart-item small{ color:var(--muted) }
+    .qty-controls{ display:flex; gap:8px; align-items:center; margin-top:6px }
+    .qty-controls button{ width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,0.03); color:#fff; font-weight:700; cursor:pointer }
+    .cart-footer{ margin-top:12px; display:flex; gap:10px; flex-direction:column }
+    .checkout-btn{ padding:12px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent1),var(--accent2)); font-weight:800; cursor:pointer; color:#071427 }
+
+    /* ===== Modal for checkout ===== */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:1700; opacity:0; pointer-events:none; transition:opacity .22s;
+    }
+    .modal-backdrop.open{ opacity:1; pointer-events:all }
+    .modal{
+      width:720px; max-width:94vw; border-radius:14px; overflow:hidden; background: linear-gradient(180deg, #061017, #09101a);
+      box-shadow: 0 30px 140px rgba(0,0,0,0.8); padding:18px; color:#eaf6ff;
+    }
+    .modal .modal-grid{ display:grid; grid-template-columns:1fr 360px; gap:18px }
+    .modal label{ display:block; font-size:0.86rem; color:var(--muted); margin-bottom:6px }
+    .modal input, .modal textarea{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); background:rgba(255,255,255,0.02); color:#fff; margin-bottom:12px }
+
+    /* Order summary list */
+    .summary{ background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; }
+    .summary .row{ display:flex; justify-content:space-between; gap:10px; margin-bottom:8px }
+
+    /* ===== Cursor trail ===== */
+    .cursor-dot{
+      position:fixed; pointer-events:none; z-index:2000; width:14px;height:14px;border-radius:50%;
+      transform: translate(-50%,-50%); mix-blend-mode:screen; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.1));
+      box-shadow:0 6px 30px rgba(0,224,255,0.08), 0 0 40px rgba(0,119,255,0.04);
+    }
+    .cursor-dot.small{ width:8px;height:8px; opacity:0.9 }
+
+    /* ===== Footer ===== */
+    footer{ padding:36px 6%; text-align:center; color:var(--muted); border-top:1px solid rgba(255,255,255,0.02); margin-top:36px }
+
+    /* ===== Animations & responsive ===== */
+    [data-animate]{ opacity:0; transform:translateY(22px); transition:all .9s cubic-bezier(.2,.9,.3,1) }
+    [data-animate].in{ opacity:1; transform:none }
+    @media (max-width:1000px){
+      .hero-inner{ grid-template-columns: 1fr; gap:20px }
+      .mockup{ order:-1; }
+      .modal .modal-grid{ grid-template-columns:1fr; }
+      .cart-drawer{ width:94vw }
+    }
+    @media (max-width:640px){
+      nav ul{ display:none }
+      header{ padding:12px 5% }
+      .logo .text{ font-size:0.95rem }
+      .product .thumb{ height:140px }
+    }
+  </style>
+</head>
+<body>
+  <!-- Particles canvas -->
+  <canvas id="particles"></canvas>
+
+  <!-- custom cursor -->
+  <div class="cursor-dot" id="cursorDot"></div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="mark">W4</div>
+      <div class="text">WHITE444YT</div>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="#home" class="active">Home</a></li>
+        <li><a href="#products">Products</a></li>
+        <li><a href="#product-detail">Details</a></li>
+        <li><a href="#cart">Cart</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <main>
+    <section id="home" class="hero" aria-label="Hero">
+      <div class="hero-inner container">
+        <div class="intro" id="heroIntro" data-animate>
+          <h1>Build your dream gaming PC — clean, cool, and powerful.</h1>
+          <p>High-performance components, custom builds, and a demo checkout — all in a 3D animated single-file site.</p>
+          <div class="controls">
+            <a class="btn" href="#products" id="shopNow"><span>Shop Now</span></a>
+            <button class="secondary" id="demoBuild">View Demo Build</button>
+            <button class="secondary" id="viewCartBtnMobile" style="display:none">Cart</button>
+          </div>
+        </div>
+
+        <div class="mockup" id="mockup" data-animate>
+          <div class="card" id="mockupCard" aria-hidden="true">
+            <div class="inner">
+              <div class="art">
+                <img src="pcstoreimg/Graphics card 2.jpg" alt="Featured GPU"/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="products" data-animate>
+      <div class="container">
+        <h2>Featured Components</h2>
+        <div class="product-grid" id="productGrid">
+          <!-- JS will insert products here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCT DETAIL (sample) -->
+    <section id="product-detail" class="container" data-animate>
+      <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:center">
+        <div style="flex:1;min-width:260px;max-width:520px">
+          <h2>RTX 4080 Graphics Card</h2>
+          <p style="color:var(--muted)">High-performance GPU for gaming and rendering. Ideal for 4K gaming and creative workloads. Fully compatible with latest CPUs and motherboards.</p>
+          <div style="margin-top:14px">
+            <strong class="price">₹1,05,000</strong>
+            <div style="margin-top:12px">
+              <button class="btn" data-sku="gpu-rtx4080" id="addDetail">Add to Cart</button>
+            </div>
+          </div>
+        </div>
+        <div style="width:320px">
+          <img src="pcstoreimg/Graphics card 2.jpg" alt="rtx" style="width:100%;border-radius:12px;box-shadow:0 16px 60px rgba(0,0,0,0.6)"/>
+        </div>
+      </div>
+    </section>
+
+    <!-- CART (section as well) -->
+    <section id="cart" data-animate>
+      <div class="container">
+        <h2>Your Cart</h2>
+        <p style="color:var(--muted)">Use the floating cart (bottom-right) to open the cart drawer, update quantities, or proceed to checkout.</p>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" data-animate>
+      <div class="container" style="max-width:880px;margin:0 auto">
+        <h2>Contact Us</h2>
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px">
+          <form id="contactForm" style="padding:20px;background:rgba(255,255,255,0.02);border-radius:12px">
+            <label>Name <input type="text" id="c_name" placeholder="Your name" required></label>
+            <label>Email <input type="email" id="c_email" placeholder="you@example.com" required></label>
+            <label>Message <textarea id="c_msg" placeholder="How can we help?" rows="5"></textarea></label>
+            <div style="display:flex;gap:10px">
+              <button class="btn" type="submit">Send Message</button>
+              <button class="secondary" type="button" id="clearCartBtn">Clear Cart</button>
+            </div>
+          </form>
+          <div style="padding:18px;background:rgba(255,255,255,0.02);border-radius:12px">
+            <h3 style="margin-top:0">Store Info</h3>
+            <p style="color:var(--muted)">Madurai, T.Vadipatti, Melanachikulam</p>
+            <p style="color:var(--muted)">Phone: 8489596575</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      &copy; 2025 WHITE444YT PC Hardware Store — All client-side.
+    </footer>
+  </main>
+
+  <!-- Floating cart button -->
+  <div class="cart-fab" id="cartFab" aria-label="Open cart">
+    <div style="font-weight:800;color:#071427">🛒</div>
+    <div class="count" id="cartCount">0</div>
+  </div>
+
+  <!-- CART DRAWER -->
+  <aside class="cart-drawer" id="cartDrawer" aria-hidden="true">
+    <h3>Your Cart</h3>
+    <div class="cart-list" id="cartList"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+      <strong style="font-size:1.05rem;color:#fff" id="cartTotalText">Total: ₹0</strong>
+      <button class="checkout-btn" id="openCheckout">Checkout</button>
+    </div>
+    <div style="margin-top:12px;text-align:center">
+      <button class="small-btn ghost" id="closeCart">Close</button>
+    </div>
+  </aside>
+
+  <!-- CHECKOUT MODAL -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 id="checkoutTitle" style="margin:0">Checkout - Order Summary</h3>
+        <button class="small-btn ghost" id="closeModal">✕</button>
+      </div>
+      <div class="modal-grid">
+        <div>
+          <label>Full name <input type="text" id="order_name" placeholder="John Doe"></label>
+          <label>Email <input type="email" id="order_email" placeholder="you@example.com"></label>
+          <label>Address <input type="text" id="order_address" placeholder="Your address"></label>
+          <label>Notes <textarea id="order_notes" rows="3" placeholder="Order notes (optional)"></textarea></label>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="checkout-btn" id="placeOrder">Place Order</button>
+            <button class="small-btn ghost" id="cancelOrder">Cancel</button>
+          </div>
+        </div>
+        <div>
+          <div class="summary" id="orderSummary"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /***************************
+     * Simple product catalog
+     ***************************/
+    const products = [
+      { sku:'gpu-rtx4080', title:'RTX 4080', price:105000, image:'pcstoreimg/Graphics card 2.jpg', desc:'High-performance GPU for gaming and rendering.'},
+      { sku:'gpu-3070', title:'RTX 3070', price:70000, image:'pcstoreimg/Graphics card.jpeg', desc:'Great 1440p performance.'},
+      { sku:'cpu-ryzen9', title:'Ryzen 9 7900X', price:40000, image:'pcstoreimg/cpu.jpg', desc:'12-core powerhouse for creators.'},
+      { sku:'mobo-x570', title:'X570 Motherboard', price:25000, image:'pcstoreimg/motherboard-background.jpg', desc:'Premium connectivity and power delivery.'}
+    ];
+
+    /* === Utilities === */
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
+
+    /* Render product cards */
+    const productGrid = $('#productGrid');
+    function renderProducts(){
+      productGrid.innerHTML = '';
+      products.forEach(p=>{
+        const el = document.createElement('div');
+        el.className = 'product';
+        el.innerHTML = `
+          <div class="thumb"><img src="${p.image}" alt="${p.title}"></div>
+          <h3>${p.title}</h3>
+          <p class="price">₹${numberWithCommas(p.price)}</p>
+          <p style="color:var(--muted);font-size:0.9rem">${p.desc}</p>
+          <div class="meta">
+            <button class="small-btn" data-sku="${p.sku}">Add</button>
+            <button class="small-btn ghost" data-sku-details="${p.sku}">Details</button>
+          </div>
+        `;
+        productGrid.appendChild(el);
+      });
+    }
+    renderProducts();
+
+    /* Number formatting */
+    function numberWithCommas(x){ return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+    /***************************
+     * Cart: localStorage-backed
+     ***************************/
+    let cart = loadCart();
+
+    function loadCart(){
+      try{
+        const raw = localStorage.getItem('w4_cart_v1');
+        return raw ? JSON.parse(raw) : {};
+      }catch(e){ return {}; }
+    }
+    function saveCart(){
+      localStorage.setItem('w4_cart_v1', JSON.stringify(cart));
+      updateCartUI();
+    }
+
+    function addToCart(sku, qty=1){
+      const prod = products.find(x=>x.sku===sku);
+      if(!prod) return;
+      if(!cart[sku]) cart[sku] = {...prod, qty:0};
+      cart[sku].qty += qty;
+      saveCart();
+      flashCartFab();
+    }
+
+    function removeFromCart(sku){
+      delete cart[sku];
+      saveCart();
+    }
+
+    function updateQty(sku, qty){
+      if(!cart[sku]) return;
+      cart[sku].qty = Math.max(0, qty);
+      if(cart[sku].qty === 0) removeFromCart(sku);
+      saveCart();
+    }
+
+    function cartItemCount(){
+      return Object.values(cart).reduce((s,i)=>s + (i.qty||0), 0);
+    }
+
+    function cartTotal(){
+      return Object.values(cart).reduce((s,i)=>s + (i.price * (i.qty||0)), 0);
+    }
+
+    /* UI - cart drawer */
+    const cartFab = $('#cartFab');
+    const cartDrawer = $('#cartDrawer');
+    const cartList = $('#cartList');
+    const cartCount = $('#cartCount');
+    const cartTotalText = $('#cartTotalText');
+
+    function updateCartUI(){
+      cartCount.textContent = cartItemCount();
+      cartTotalText.textContent = 'Total: ₹' + numberWithCommas(cartTotal());
+      renderCartItems();
+    }
+
+    function renderCartItems(){
+      cartList.innerHTML = '';
+      if(Object.keys(cart).length === 0){
+        cartList.innerHTML = '<p style="color:var(--muted)">Your cart is empty. Add some components.</p>';
+        return;
+      }
+      Object.values(cart).forEach(item=>{
+        const r = document.createElement('div');
+        r.className = 'cart-item';
+        r.innerHTML = `
+          <img src="${item.image}" alt="${item.title}">
+          <div style="flex:1">
+            <div class="title">${item.title}</div>
+            <small>₹${numberWithCommas(item.price)} each</small>
+            <div class="qty-controls">
+              <button data-action="dec" data-sku="${item.sku}">−</button>
+              <div style="min-width:38px;text-align:center">${item.qty}</div>
+              <button data-action="inc" data-sku="${item.sku}">+</button>
+              <button class="small-btn ghost" data-action="remove" data-sku="${item.sku}" style="margin-left:8px">Remove</button>
+            </div>
+          </div>
+        `;
+        cartList.appendChild(r);
+      });
+    }
+
+    // Delegate clicks on cartList
+    cartList.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button');
+      if(!btn) return;
+      const action = btn.dataset.action;
+      const sku = btn.dataset.sku;
+      if(action === 'inc') { updateQty(sku, cart[sku].qty + 1); }
+      if(action === 'dec') { updateQty(sku, cart[sku].qty - 1); }
+      if(action === 'remove') { removeFromCart(sku); }
+    });
+
+    /* Add-to-cart from products */
+    productGrid.addEventListener('click', (e)=>{
+      const add = e.target.closest('button[data-sku]');
+      if(add){
+        const sku = add.dataset.sku;
+        addToCart(sku, 1);
+        showToast('Added to cart');
+      }
+      const det = e.target.closest('button[data-sku-details]');
+      if(det){
+        const sku = det.dataset.skuDetails;
+        // scroll to product-detail and prefill details if matches
+        const p = products.find(x=>x.sku === sku);
+        if(p){
+          const info = document.querySelector('#product-detail .info');
+          if(info){
+            while(info.firstChild) info.removeChild(info.firstChild);
+            info.innerHTML = `<h2>${p.title}</h2><p class="price">₹${numberWithCommas(p.price)}</p><p style="color:var(--muted)">${p.desc}</p><a class="btn" data-sku="${p.sku}">Add to Cart</a>`;
+          }
+          document.querySelector('#product-detail img').src = p.image;
+          window.location.hash = '#product-detail';
+        }
+      }
+    });
+
+    // Add to cart from detail
+    document.addEventListener('click', (e)=>{
+      if(e.target.matches('#addDetail') || (e.target.matches('#product-detail .btn'))){
+        const sku = e.target.dataset.sku || 'gpu-rtx4080';
+        addToCart(sku, 1);
+        showToast('Added to cart');
+      }
+    });
+
+    // cart drawer toggles
+    cartFab.addEventListener('click', ()=>{ cartDrawer.classList.toggle('open') });
+    $('#closeCart').addEventListener('click', ()=> cartDrawer.classList.remove('open'));
+
+    // checkout open
+    $('#openCheckout').addEventListener('click', ()=>{
+      openCheckoutModal();
+    });
+
+    // clear cart
+    $('#clearCartBtn').addEventListener('click', ()=>{
+      if(confirm('Clear cart?')){ cart = {}; saveCart(); showToast('Cart cleared'); }
+    });
+
+    // demo build button
+    $('#demoBuild').addEventListener('click', ()=>{
+      // add demo items
+      addToCart('gpu-rtx4080',1);
+      addToCart('cpu-ryzen9',1);
+      addToCart('mobo-x570',1);
+      showToast('Demo build added');
+    });
+
+    // load initial UI
+    updateCartUI();
+
+    /***************************
+     * CHECKOUT MODAL LOGIC
+     ***************************/
+    const modalBackdrop = $('#modalBackdrop');
+    const orderSummary = $('#orderSummary');
+
+    function openCheckoutModal(){
+      renderOrderSummary();
+      modalBackdrop.classList.add('open');
+    }
+    function closeCheckoutModal(){ modalBackdrop.classList.remove('open'); }
+
+    $('#closeModal').addEventListener('click', closeCheckoutModal);
+    $('#cancelOrder').addEventListener('click', closeCheckoutModal);
+    $('#modalBackdrop').addEventListener('click', (e)=>{ if(e.target === modalBackdrop) closeCheckoutModal(); });
+
+    function renderOrderSummary(){
+      const items = Object.values(cart);
+      if(items.length === 0){
+        orderSummary.innerHTML = '<p style="color:var(--muted)">Cart empty.</p>';
+        return;
+      }
+      orderSummary.innerHTML = '';
+      items.forEach(it=>{
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `<div style="font-weight:700">${it.title} x${it.qty}</div><div>₹${numberWithCommas(it.price * it.qty)}</div>`;
+        orderSummary.appendChild(row);
+      });
+      const sep = document.createElement('div'); sep.style.borderTop='1px solid rgba(255,255,255,0.04)'; sep.style.margin='8px 0';
+      orderSummary.appendChild(sep);
+      const totRow = document.createElement('div'); totRow.className='row'; totRow.innerHTML = `<strong>Total</strong><strong>₹${numberWithCommas(cartTotal())}</strong>`;
+      orderSummary.appendChild(totRow);
+    }
+
+    // place order simulation
+    $('#placeOrder').addEventListener('click', ()=>{
+      const name = $('#order_name').value.trim();
+      const email = $('#order_email').value.trim();
+      const address = $('#order_address').value.trim();
+      if(!name || !email || !address){
+        alert('Please enter name, email and address to place order.');
+        return;
+      }
+      // simulate order id
+      const orderId = 'ORD' + Date.now().toString(36).toUpperCase().slice(-6);
+      // clear cart
+      cart = {};
+      saveCart();
+      closeCheckoutModal();
+      showToast('Order placed: ' + orderId);
+      alert('Order placed successfully!\nOrder ID: ' + orderId + '\n(This is a demo — no payment processed.)');
+    });
+
+    /***************************
+     * Small toast
+     ***************************/
+    function showToast(txt, ms=1400){
+      const t = document.createElement('div');
+      t.textContent = txt;
+      Object.assign(t.style, {
+        position:'fixed', left:'50%', transform:'translateX(-50%)', bottom:'24px', zIndex:2000,
+        background:'linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
+        color:'#fff', padding:'10px 18px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.03)', boxShadow:'0 12px 40px rgba(0,0,0,0.6)'
+      });
+      document.body.appendChild(t);
+      setTimeout(()=> t.style.opacity='0.0', ms-300);
+      setTimeout(()=> t.remove(), ms);
+    }
+
+    /***************************
+     * Intersection observer for animations
+     ***************************/
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting) e.target.classList.add('in');
+      });
+    }, {threshold:0.12});
+    document.querySelectorAll('[data-animate]').forEach(el=> io.observe(el));
+
+    /***************************
+     * Particles background (canvas)
+     * (kept colorful as requested)
+     ***************************/
+    (function(){
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      let w=canvas.width=innerWidth, h=canvas.height=innerHeight;
+      const particles = [];
+      const PARTICLE_COUNT = Math.max(40, Math.floor((w*h)/60000));
+
+      function rand(min,max){ return Math.random()*(max-min)+min }
+      function make(){
+        for(let i=0;i<PARTICLE_COUNT;i++){
+          particles.push({
+            x: Math.random()*w,
+            y: Math.random()*h,
+            vx: rand(-0.15,0.15),
+            vy: rand(-0.2,0.2),
+            size: rand(0.6,2.2),
+            hue: rand(160,360), // colorful range
+            life: rand(60,300)
+          });
+        }
+      }
+      make();
+      window.addEventListener('resize', ()=>{ w=canvas.width=innerWidth; h=canvas.height=innerHeight; });
+
+      let t=0;
+      function draw(){
+        ctx.clearRect(0,0,w,h);
+        t += 0.01;
+        particles.forEach((p,i)=>{
+          p.x += p.vx + Math.sin(t + i)*0.02;
+          p.y += p.vy + Math.cos(t + i)*0.02;
+          p.life--;
+          if(p.x > w+40) p.x = -40;
+          if(p.x < -40) p.x = w+40;
+          if(p.y > h+40) p.y = -40;
+          if(p.y < -40) p.y = h+40;
+          if(p.life <= 0) { p.x = Math.random()*w; p.y = -10; p.life = rand(60,300); }
+          const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*8);
+          g.addColorStop(0, `hsla(${p.hue},80%,70%,0.14)`);
+          g.addColorStop(0.4, `hsla(${p.hue},80%,60%,0.06)`);
+          g.addColorStop(1, `hsla(${p.hue},80%,40%,0)`);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(p.x,p.y,p.size*6,0,Math.PI*2);
+          ctx.fill();
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    /***************************
+     * Cursor trail + parallax on mouse move
+     ***************************/
+    (function(){
+      const cursor = document.getElementById('cursorDot');
+      let mx=0,my=0, cx=window.innerWidth/2, cy=window.innerHeight/2;
+      let visible = true;
+      window.addEventListener('mousemove', (e)=>{
+        mx = e.clientX;
+        my = e.clientY;
+        cursor.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+        // parallax on mockup card
+        const mock = document.getElementById('mockupCard');
+        const rect = mock.getBoundingClientRect();
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top + rect.height/2;
+        const dx = (mx - cx);
+        const dy = (my - cy);
+        mock.style.transform = `rotateY(${dx/40}deg) rotateX(${ -dy/60 }deg) translateZ(10px)`;
+      });
+      window.addEventListener('mouseleave', ()=> cursor.style.opacity = '0');
+      window.addEventListener('mouseenter', ()=> cursor.style.opacity = '1');
+      // small dot shrink on hover of buttons
+      document.addEventListener('mouseover', (e)=>{
+        if(e.target.closest('button, a')) cursor.style.transform += ' scale(1.4)';
+      });
+      document.addEventListener('mouseout', (e)=>{
+        if(e.target.closest('button, a')) cursor.style.transform = cursor.style.transform.replace(' scale(1.4)','');
+      });
+    })();
+
+    /***************************
+     * Tiny UX bits
+     ***************************/
+    // close modal & cart on Esc
+    document.addEventListener('keydown', e=>{
+      if(e.key === 'Escape'){ $('#modalBackdrop').classList.remove('open'); cartDrawer.classList.remove('open'); }
+    });
+
+    // contact form handler
+    $('#contactForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      showToast('Message sent — we will contact you soon!');
+      e.target.reset();
+    });
+
+    // quick mobile optimization: show cart button
+    function handleMobileUI(){
+      if(window.innerWidth < 640){
+        $('#viewCartBtnMobile').style.display = 'inline-block';
+        $('#viewCartBtnMobile').addEventListener('click', ()=> cartDrawer.classList.toggle('open'));
+      } else {
+        $('#viewCartBtnMobile').style.display = 'none';
+      }
+    }
+    handleMobileUI();
+    window.addEventListener('resize', handleMobileUI);
+
+    // small visual flash when adding to cart
+    function flashCartFab(){
+      cartFab.animate([{ transform:'scale(1)' }, { transform:'scale(1.12)' }, { transform:'scale(1)' }], { duration:420 });
+    }
+
+    // initial animate mockup card a little
+    setTimeout(()=> {
+      document.getElementById('mockupCard').animate([{ transform:'translateY(0)'},{ transform:'translateY(-10px)'}], { duration:1400, direction:'alternate', iterations:Infinity, easing:'ease-in-out' });
+    }, 600);
+
+    // Friendly: warn if images missing (will not break)
+    window.addEventListener('error', (e)=>{
+      if(e.target && e.target.tagName === 'IMG') console.warn('Image failed to load:', e.target.src);
+    }, true);
+
+    // expose some for debug in console
+    window._W4 = { products, cart, addToCart, removeFromCart, updateQty, saveCart };
+
+    // sync saved cart into UI (if localStorage changed in another tab)
+    window.addEventListener('storage', (e)=>{
+      if(e.key === 'w4_cart_v1') { cart = loadCart(); updateCartUI(); }
+    });
+
+    /***************************
+     * initial small delay to show animations
+     ***************************/
+    setTimeout(()=> document.querySelectorAll('[data-animate]').forEach(el=> el.classList.add('in')), 250);
+  </script>
+</body>
+</html>
